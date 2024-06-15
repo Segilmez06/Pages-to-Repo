@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  draft_release:
+    name: Draft new release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch source code
+        uses: actions/checkout@v4
+
+      - name: Compress files
+        run: cd src; zip -r ../extension.zip .; cd ..
+  
+      - name: Read version from manifest.json
+        id: read_version
+        run: |
+          VERSION=$(jq -r '.version' src/manifest.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+  
+      - name: Use the version
+        run: echo "The version from manifest.json is "
+        env:
+          VERSION: ${{ env.VERSION }}
+
+      - uses: cardinalby/webext-buildtools-chrome-crx-action@v2
+        with:
+          zipFilePath: 'extension.zip'
+          crxFilePath: 'extension.crx'
+          privateKey: ${{ secrets.PRIVATEKEY }}
+
+      - name: List files
+        run: ls
+
+      - name: Create release draft
+        run: gh release create ${{ env.VERSION }} -d -t "v${{ env.VERSION }}" -n ""
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Upload files
+        run: gh release upload ${{ env.VERSION }} extension.crx
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
