@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
   draft_release:
@@ -22,17 +21,12 @@ jobs:
         run: |
           VERSION=$(jq -r '.version' src/manifest.json)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-  
-      - name: Use the version
-        run: echo "The version from manifest.json is "
-        env:
-          VERSION: ${{ env.VERSION }}
 
       - uses: cardinalby/webext-buildtools-chrome-crx-action@v2
         with:
           zipFilePath: 'extension.zip'
           crxFilePath: 'extension.crx'
-          privateKey: ${{ secrets.PRIVATEKEY }}
+          privateKey: ${{ secrets.PRIVATE_KEY }}
 
       - name: List files
         run: ls
